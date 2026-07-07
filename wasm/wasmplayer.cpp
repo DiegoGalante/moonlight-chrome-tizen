@@ -160,14 +160,6 @@ void MoonlightInstance::VideoTrackListener::OnSessionIdChanged(
   m_Instance->m_VideoSessionId.store(new_session_id);
 }
 
-void MoonlightInstance::DidChangeFocus(bool got_focus) {
-  // Request an IDR frame to dump the frame queue that may have
-  // built up from the GL pipeline being stalled.
-  if (got_focus) {
-    LiRequestIdrFrame();
-  }
-}
-
 bool MoonlightInstance::InitializeRenderingSurface(int width, int height) {
   return true;
 }
@@ -301,6 +293,11 @@ int redrawRate, void* context, int drFlags) {
   videoFormat, width, height, redrawRate, context, drFlags);
   if (s_VideoSetupFailed) {
     ClLogMessage("Video pipeline setup failed, aborting connection\n");
+    // The media pipeline is set up only once per app launch, so once it has
+    // failed, retrying in the same session will keep failing. Tell the user how
+    // to recover instead of leaving them guessing why every attempt aborts.
+    PostToJs(std::string("DialogMsg: Video setup failed. Try a different codec; "
+                         "if it keeps failing, close and reopen Moonlight."));
     return -1;
   }
   return DR_OK;
