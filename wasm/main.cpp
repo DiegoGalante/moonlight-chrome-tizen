@@ -36,6 +36,7 @@ MoonlightInstance* g_Instance;
 
 MoonlightInstance::MoonlightInstance()
     : m_OpusDecoder(NULL),
+      m_Running(false),
       m_MouseLocked(false),
       m_MouseLastPosX(-1),
       m_MouseLastPosY(-1),

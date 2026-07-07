@@ -160,14 +160,6 @@ void MoonlightInstance::VideoTrackListener::OnSessionIdChanged(
   m_Instance->m_VideoSessionId.store(new_session_id);
 }
 
-void MoonlightInstance::DidChangeFocus(bool got_focus) {
-  // Request an IDR frame to dump the frame queue that may have
-  // built up from the GL pipeline being stalled.
-  if (got_focus) {
-    LiRequestIdrFrame();
-  }
-}
-
 bool MoonlightInstance::InitializeRenderingSurface(int width, int height) {
   return true;
 }

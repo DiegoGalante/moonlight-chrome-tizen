@@ -113,7 +113,6 @@ public:
   static void ClLogMessage(const char* format, ...);
   static void ClControllerRumble(unsigned short gamepadID, unsigned short lowFreqMotor, unsigned short highFreqMotor);
 
-  void DidChangeFocus(bool got_focus);
   bool InitializeRenderingSurface(int width, int height);
 
   static int VidDecSetup(int videoFormat, int width, int height, int redrawRate, void* context, int drFlags);
