@@ -36,6 +36,7 @@ function attachListeners() {
   $('#audioSyncSwitch').on('click', saveAudioSync);
   $('#hdrSwitch').on('click', saveHdr);
   $('.codecVideoMenu li').on('click', saveCodecVideo);
+  $('.profileMenu li').on('click', saveProfile);
   $('#addHostCell').on('click', addHost);
   $('#backIcon').on('click', showHostsAndSettingsMode);
   $('#quitCurrentApp').on('click', stopGameWithConfirmation);
@@ -52,6 +53,7 @@ function attachListeners() {
   registerMenu('selectResolution', Views.SelectResolutionMenu);
   registerMenu('selectFramerate', Views.SelectFramerateMenu);
   registerMenu('bandwidthMenu', Views.SelectBitrateMenu);
+  registerMenu('selectProfile', Views.SelectProfileMenu);
 
   Controller.startWatching();
   window.addEventListener('gamepadbuttonpressed', (e) => {
@@ -1161,6 +1163,49 @@ function saveCodecVideo() {
   Navigation.pop();
 }
 
+// Apply a connection profile: a one-shot setter for the latency-related
+// options. Cable favors the lowest latency; Wi-Fi favors stability; Manual
+// leaves the individual toggles exactly as the user set them.
+function applyProfile(profile) {
+  if (profile === 'manual') {
+    return;
+  }
+  const cable = (profile === 'cable');
+
+  // Frame pacing and audio sync: OFF on cable (less latency), ON on wifi
+  // (absorbs jitter). Update the toggle UI and persist the values.
+  const framePacingBtn = document.querySelector('#framePacingBtn');
+  const audioSyncBtn = document.querySelector('#audioSyncBtn');
+  if (cable) {
+    framePacingBtn.MaterialIconToggle.uncheck();
+    audioSyncBtn.MaterialIconToggle.uncheck();
+  } else {
+    framePacingBtn.MaterialIconToggle.check();
+    audioSyncBtn.MaterialIconToggle.check();
+  }
+  storeData('framePacing', !cable, null);
+  storeData('audioSync', !cable, null);
+
+  // Bitrate: start from the resolution's recommended value; trim it for wifi to
+  // leave headroom against jitter/packet loss.
+  updateDefaultBitrate();
+  if (!cable) {
+    const recommended = parseFloat($('#bitrateSlider').val());
+    const wifiBitrate = Math.max(1, Math.round(recommended * 0.6));
+    $('#bitrateSlider')[0].MaterialSlider.change(wifiBitrate.toString());
+    updateBitrateField();
+    saveBitrate();
+  }
+}
+
+function saveProfile() {
+  var chosenProfile = $(this).data('value');
+  $('#selectProfile').text($(this).text()).data('value', chosenProfile);
+  storeData('connectionProfile', chosenProfile, null);
+  applyProfile(chosenProfile);
+  Navigation.pop();
+}
+
 function saveAudioSync() {
   setTimeout(function() {
     const chosenAudioSync = $("#audioSyncSwitch").parent().hasClass('is-checked');
@@ -1359,6 +1404,19 @@ function loadUserDataCb() {
   getData('bitrate', function(previousValue) {
     $('#bitrateSlider')[0].MaterialSlider.change(previousValue.bitrate != null ? previousValue.bitrate : '20');
     updateBitrateField();
+  });
+
+  // Restore the connection profile label only. We deliberately do NOT re-apply
+  // it here so any manual tweaks the user made afterwards are preserved.
+  console.log('load stored connection profile');
+  getData('connectionProfile', function (previousValue) {
+    if (previousValue.connectionProfile != null) {
+      $('.profileMenu li').each(function () {
+        if ($(this).data('value') === previousValue.connectionProfile) {
+          $('#selectProfile').text($(this).text()).data('value', previousValue.connectionProfile);
+        }
+      });
+    }
   });
 }
 
