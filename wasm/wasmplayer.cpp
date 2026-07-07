@@ -293,6 +293,11 @@ int redrawRate, void* context, int drFlags) {
   videoFormat, width, height, redrawRate, context, drFlags);
   if (s_VideoSetupFailed) {
     ClLogMessage("Video pipeline setup failed, aborting connection\n");
+    // The media pipeline is set up only once per app launch, so once it has
+    // failed, retrying in the same session will keep failing. Tell the user how
+    // to recover instead of leaving them guessing why every attempt aborts.
+    PostToJs(std::string("DialogMsg: Video setup failed. Try a different codec; "
+                         "if it keeps failing, close and reopen Moonlight."));
     return -1;
   }
   return DR_OK;
